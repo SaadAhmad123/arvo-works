@@ -15,6 +15,7 @@ import {
 import z from 'zod';
 import { readCard } from './tools/readCard.ts';
 import { addComment } from './tools/addComment.ts';
+import { calculatorAgentContract } from '../calculator.agent.ts';
 
 export const kanbanAgentContract = createArvoOrchestratorContract({
   uri: '#/kanban/amas/agent/kanban',
@@ -62,7 +63,11 @@ export const kanbanAgent: EventHandlerFactory<{
     memory: memory,
     contracts: {
       self: kanbanAgentContract,
-      services: {},
+      services: {
+        calculatorAgent: {
+          contract: calculatorAgentContract.version('1.0.0'),
+        },
+      },
     },
     onStream,
     llm: openaiLLMIntegration(

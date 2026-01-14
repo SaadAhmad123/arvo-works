@@ -6,14 +6,19 @@ import { CardSeenMemory } from './CardSeenMemory.ts';
 await load({ export: true });
 
 const nocodbApiConfig = createNocodbApiConfig({
-  baseId: Deno.env.get("BASE_ID") ?? '',
-  tableId: Deno.env.get("TABLE_ID") ?? '',
+  baseId: Deno.env.get('BASE_ID') ?? '',
+  tableId: Deno.env.get('TABLE_ID') ?? '',
 });
-export const botEmail = Deno.env.get("BOT_EMAIL") ?? '';
+export const botEmail = Deno.env.get('BOT_EMAIL') ?? '';
 
 const schema = z.object({
   Title: z.string().nullable().optional(),
-  'Task Board Select Field': z.enum(['TODO', 'PROGRESSING', 'DONE']),
+  'Task Board Select Field': z.enum([
+    'TODO',
+    'PROGRESSING',
+    'DONE',
+    'FINALIZED',
+  ]),
   Description: z.string().nullable().optional(),
   Result: z.string().nullable().optional(),
   Rationale: z.string().nullable().optional(),
@@ -29,4 +34,3 @@ export const board = new KanbanBoard(
   'Task Board Select Field',
 );
 export const cardSeenMemory = new CardSeenMemory();
-

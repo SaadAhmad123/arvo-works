@@ -1,5 +1,6 @@
 import { createArvoOrchestratorContract } from 'arvo-core';
 import {
+  ArvoDomain,
   type EventHandlerFactory,
   type IMachineMemory,
 } from 'arvo-event-handler';
@@ -13,6 +14,7 @@ import z from 'zod';
 import { cleanString } from 'arvo-core';
 import type { AgentStreamListener } from '@arvo-tools/agentic';
 import { calculatorContract } from './calculator.service.ts';
+import { humanConversationContract } from './human.conversation.contract.ts';
 
 export const calculatorAgentContract = createArvoOrchestratorContract({
   uri: '#/org/amas/agent/calculator',
@@ -47,6 +49,10 @@ export const calculatorAgent: EventHandlerFactory<
         calculatorContract: {
           contract: calculatorContract.version('1.0.0'),
         },
+        humanConversation: {
+          contract: humanConversationContract.version('1.0.0'),
+          domains: [ArvoDomain.FROM_EVENT_CONTRACT],
+        },
       },
     },
     onStream,
@@ -80,6 +86,15 @@ export const calculatorAgent: EventHandlerFactory<
               For complex queries that you believe are solvable, you can break down the 
               query into smaller calculations which your tool can perform and use the tool to 
               solve each part.
+
+              **Human approval workflow:** Before executing any calculation tool calls, you must first 
+              use the ${tools.services.humanConversation.name} to present your execution plan to the 
+              human user. Clearly describe what calculations you intend to perform and how you will 
+              solve their request. Wait for the human to explicitly approve your plan before proceeding 
+              with the ${tools.services.calculatorContract.name}. If the human asks questions or requests 
+              clarification about your plan, continue using the ${tools.services.humanConversation.name} 
+              to address their questions until they explicitly approve. Only execute the calculation tools 
+              after receiving clear approval from the human.
 
               **Critical tool use direction:** If you determine that a request needs 
               multiple tool calls and they can be made in parallel, then always execute parallel 

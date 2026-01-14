@@ -1,0 +1,80 @@
+import { createArvoEventFactory } from 'arvo-core';
+import { kanbanAgentContract } from '../handlers/agent.kanban/index.ts';
+import { board, botEmail } from '../kanban/config.ts';
+
+import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import { createOtelContextFromEvent } from './utils.ts';
+import {
+  resolveDomainedEventFromCartComments,
+} from './KanbanDomainedEventManager.ts';
+import { executeKanbanEvent } from './executeKanbanEvent.ts';
+import { onDomainedEvent } from './onDomainedEvent.ts';
+import { INTERNAL_EVENT_SOURCE, tracer } from './config.ts';
+import { onDomainedEventResponse } from './onDomainedEventResponse.ts';
+
+export const dispatchCard = async (cardId: string) => {
+  console.log(`Addressing Card -> Id:${cardId}`);
+  await board.update(cardId, { 'Task Board Select Field': 'PROGRESSING' });
+  const event = createArvoEventFactory(kanbanAgentContract.version('1.0.0'))
+    .accepts({
+      source: INTERNAL_EVENT_SOURCE,
+      data: {
+        parentSubject$$: null,
+        cardId,
+      },
+    });
+  await executeKanbanEvent(cardId, event, onDomainedEvent);
+  console.log(`Addressed Card -> Id:${cardId}`);
+};
+
+export const dispatchDomainedEventResponseFromCard = async (
+  cardId: string,
+) => {
+  const card = await board.get(cardId);
+  const domainedEvents = await resolveDomainedEventFromCartComments(
+    cardId,
+    JSON.stringify(
+      card.comments.filter((item) => item.created_by_email !== botEmail),
+    ),
+  );
+
+  console.log(
+    `${domainedEvents.length} Human response detected...`,
+    domainedEvents.map((item) => item.id),
+  );
+  if (!domainedEvents.length) return;
+
+  await Promise.all(
+    domainedEvents.map(({ id, event }) =>
+      tracer.startActiveSpan(
+        `Resolving Comment ${id}`,
+        {
+          kind: SpanKind.INTERNAL,
+        },
+        createOtelContextFromEvent(event),
+        async (span) => {
+          console.log(`Addressing response ${id}`);
+          span.setStatus({ code: SpanStatusCode.OK });
+          try {
+            const e = await onDomainedEventResponse(
+              { value: id, formatted: `!!${id}` },
+              event,
+              card,
+            );
+            if (e) {
+              await executeKanbanEvent(cardId, e, onDomainedEvent);
+            }
+          } catch (e) {
+            span.setStatus({ code: SpanStatusCode.ERROR });
+            span.recordException(e as Error);
+            throw e;
+          } finally {
+            span.end();
+          }
+        },
+      )
+    ),
+  );
+
+  console.log('Finalized event from human response');
+};

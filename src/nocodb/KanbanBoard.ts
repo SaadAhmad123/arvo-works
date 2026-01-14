@@ -65,6 +65,6 @@ export class KanbanBoard<
   }
 
   async comment(id: string, comment: string) {
-    return await addComment(this.config, {row_id: id, comment})
+    return await addComment(this.config, { row_id: id, comment });
   }
 }

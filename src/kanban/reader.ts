@@ -18,11 +18,13 @@ export const fetchAddressableCards = async (
 
   for (const card of cards) {
     if (unseenCards.length >= limit) break;
-    const relevantCommentIds: string[] = (card.comments ?? []).filter(item => item.created_by_email !== botEmail).map(item => item.id)
+    const relevantCommentIds: string[] = (card.comments ?? []).filter((item) =>
+      item.created_by_email !== botEmail
+    ).map((item) => item.id);
     if (
       await cardSeenMemory.isSeen(
         card.id,
-        relevantCommentIds
+        relevantCommentIds,
       )
     ) {
       continue;

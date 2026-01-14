@@ -1,26 +1,30 @@
-import { Resource } from '@opentelemetry/resources';
+import { resourceFromAttributes } from '@opentelemetry/resources';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-node';
+import { OTLPTraceExporter as HTTPExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { OTLPTraceExporter as ProtoBufExporter } from '@opentelemetry/exporter-trace-otlp-proto';
+import {
+  BatchSpanProcessor,
+  SimpleSpanProcessor,
+} from '@opentelemetry/sdk-trace-node';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { SEMRESATTRS_PROJECT_NAME } from '@arizeai/openinference-semantic-conventions';
 
-const jaegerExporter = new OTLPTraceExporter({
+const jaegerExporter = new HTTPExporter({
   url: 'http://localhost:6001/jaeger/v1/traces',
 });
 
-const phoenixExporter = new OTLPTraceExporter({
+const phoenixExporter = new ProtoBufExporter({
   url: 'http://localhost:6001/arize/v1/traces',
 });
 
 const sdk = new NodeSDK({
-  resource: new Resource({
+  resource: resourceFromAttributes({
     [ATTR_SERVICE_NAME]: 'kanban-agent',
     [SEMRESATTRS_PROJECT_NAME]: 'kanban-agent',
   }),
   spanProcessors: [
     new BatchSpanProcessor(jaegerExporter),
-    new BatchSpanProcessor(phoenixExporter),
+    new SimpleSpanProcessor(phoenixExporter),
   ],
 });
 

@@ -18,16 +18,16 @@ export const addComment = createAgentTool({
     comment: z.string().describe(cleanString(`
       The message content that the agent wants to add 
       to the card's conversation thread
-    `))
+    `)),
   }),
   output: z.object({
     result: z.boolean().describe(cleanString(`
       Confirmation flag indicating whether the comment 
       was successfully posted to the Kanban card
-    `))
+    `)),
   }),
   fn: async ({ id, comment }) => {
-    await board.comment(id, comment)
-    return {result: true}
+    await board.comment(id, comment);
+    return { result: true };
   },
 });
