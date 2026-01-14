@@ -8,6 +8,7 @@ const CommentSchema = z.object({
   comment: z.string().nullable().optional(),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
+  created_by_email: z.string().optional(),
 }).passthrough();
 
 const ListCommentsResponseSchema = z.object({

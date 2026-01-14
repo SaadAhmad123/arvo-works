@@ -5,8 +5,12 @@ import { getRecord } from './getRecord.ts';
 import { listComments } from './listComments.ts';
 import { updateRecord } from './updateRecord.ts';
 import { RecordSchema } from './schema.ts';
+import { addComment } from './addComment.ts';
 
-export class KanbanBoard<T extends z.ZodTypeAny, S extends keyof z.infer<T>> {
+export class KanbanBoard<
+  T extends z.ZodTypeAny = z.ZodTypeAny,
+  S extends keyof z.infer<T> = keyof z.infer<T>,
+> {
   constructor(
     private readonly config: NocodbApiConfig,
     private readonly schema: T,
@@ -58,5 +62,9 @@ export class KanbanBoard<T extends z.ZodTypeAny, S extends keyof z.infer<T>> {
   async updateStage(id: string, stage: z.infer<T>[S]) {
     // deno-lint-ignore no-explicit-any
     return await this.update(id, { [this.kanbanStageField]: stage } as any);
+  }
+
+  async comment(id: string, comment: string) {
+    return await addComment(this.config, {row_id: id, comment})
   }
 }
