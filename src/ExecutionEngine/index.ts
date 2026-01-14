@@ -1,6 +1,5 @@
 import { createArvoEventFactory } from 'arvo-core';
-import { kanbanAgentContract } from '../handlers/agent.kanban/index.ts';
-import { board, botEmail } from '../kanban/config.ts';
+import { board } from '../kanban/config.ts';
 
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import { createOtelContextFromEvent } from './utils.ts';
@@ -9,13 +8,19 @@ import {
 } from './KanbanDomainedEventManager.ts';
 import { executeKanbanEvent } from './executeKanbanEvent.ts';
 import { onDomainedEvent } from './onDomainedEvent.ts';
-import { INTERNAL_EVENT_SOURCE, tracer } from './config.ts';
+import { botEmails, INTERNAL_EVENT_SOURCE, tracer } from '../config.ts';
 import { onDomainedEventResponse } from './onDomainedEventResponse.ts';
 
-export const dispatchCard = async (cardId: string) => {
+export const dispatchCard = async (cardId: string, botEmail: string) => {
   console.log(`Addressing Card -> Id:${cardId}`);
+  const contract = botEmails[botEmail]
+  if (!contract) {
+    const err = `Unable to find contract for bot email -> ${botEmail}`
+    console.error(err)
+    await board.update(cardId, { 'Task Board Select Field': 'DONE', Result: err });  
+  }
   await board.update(cardId, { 'Task Board Select Field': 'PROGRESSING' });
-  const event = createArvoEventFactory(kanbanAgentContract.version('1.0.0'))
+  const event = createArvoEventFactory(contract.version('1.0.0'))
     .accepts({
       source: INTERNAL_EVENT_SOURCE,
       data: {
@@ -31,10 +36,13 @@ export const dispatchDomainedEventResponseFromCard = async (
   cardId: string,
 ) => {
   const card = await board.get(cardId);
+  const emails = Object.keys(botEmails);
   const domainedEvents = await resolveDomainedEventFromCartComments(
     cardId,
     JSON.stringify(
-      card.comments.filter((item) => item.created_by_email !== botEmail),
+      card.comments.filter((item) =>
+        !emails.includes(item.created_by_email ?? '')
+      ),
     ),
   );
 

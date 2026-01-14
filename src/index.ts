@@ -14,7 +14,7 @@ await start(async () => {
     if ((await domainedEventManager.inflightCards()).includes(card.id)) {
       dispatchDomainedEventResponseFromCard(card.id);
     } else {
-      dispatchCard(card.id);
+      dispatchCard(card.id, card.card?.Assigned?.[0]?.email ?? 'unknown');
     }
   }
 }).finally(() => {

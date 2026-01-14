@@ -9,7 +9,6 @@ const nocodbApiConfig = createNocodbApiConfig({
   baseId: Deno.env.get('BASE_ID') ?? '',
   tableId: Deno.env.get('TABLE_ID') ?? '',
 });
-export const botEmail = Deno.env.get('BOT_EMAIL') ?? '';
 
 const schema = z.object({
   Title: z.string().nullable().optional(),

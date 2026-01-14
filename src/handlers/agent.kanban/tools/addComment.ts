@@ -17,7 +17,8 @@ export const addComment = createAgentTool({
     `)),
     comment: z.string().describe(cleanString(`
       The message content that the agent wants to add 
-      to the card's conversation thread
+      to the card's conversation thread.
+      Critical: Must be in Markdown format
     `)),
   }),
   output: z.object({

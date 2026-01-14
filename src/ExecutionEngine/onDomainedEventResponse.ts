@@ -1,7 +1,7 @@
 import { ArvoEvent, createArvoEventFactory } from 'arvo-core';
 import { humanConversationContract } from '../handlers/human.conversation.contract.ts';
 import { board } from '../kanban/config.ts';
-import { INTERNAL_EVENT_SOURCE } from './config.ts';
+import { INTERNAL_EVENT_SOURCE } from '../config.ts';
 
 export const onDomainedEventResponse = async (
   id: { value: string; formatted: string },

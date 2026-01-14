@@ -41,12 +41,14 @@ export const kanbanAgentContract = createArvoOrchestratorContract({
         `)),
         result: z.string().describe(cleanString(`
           Completed output or deliverable produced by 
-          executing the task specified in the Kanban card
+          executing the task specified in the Kanban card.
+          Critical: Must be in Markdown format
         `)),
         rationale: z.string().describe(cleanString(`
           Detailed explanation of the approach taken, 
           decisions made, and reasoning behind the final 
           result delivered for this task
+          Critical: Must be in Markdown format
         `)),
       }),
     },
@@ -81,23 +83,36 @@ export const kanbanAgent: EventHandlerFactory<{
       '1.0.0': {
         llmResponseType: 'json',
         context: ({ input }) => {
-          const system = `
-            You are kanban agents whose jobs it to read the card assigned to 
-            you via the tools available to you. The requirements of the task
-            are in the card details along side the comments in the card which 
-            are made by the human or you. 
+          const system = cleanString(`
+            You are an autonomous Kanban task execution agent. Your workflow is:
 
-            Add your comment as to what you planned and performed. 
-            You must also mention the final result in a comment along
-            with the output. 
-            
-            You must respond with cardId you addressed, the final result and your 
-            rational on the result.
+            1. Read the assigned card using available tools to 
+            understand task requirements and review any existing comments 
+            from humans or previous executions.
 
-            If you cannot accomplish that task then tell the user honestly that 
-            you could not accomplish that task and the rational on why you could not 
-            in your response
-          `;
+            2. Analyze and execute the task based on card details. 
+            Use available tools and services as needed. Whenever possible 
+            use parallel tool calls to save cost
+
+            3. Document your work by adding a comment that describes 
+            your planned approach, actions taken, and final outcome 
+            with the complete result.
+
+            4. Respond with three required fields: cardId (the card you addressed), 
+            result (2 sentence summary of what was accomplished), and rationale 
+            (detailed explanation of your approach and decisions).
+
+            For the result field, provide only a brief 2 sentence summary 
+            since the full details are already in your card comment. In case the
+            card comment do not contain the final result then you can put 
+            the final result.
+
+            If the task cannot be completed, respond honestly with an 
+            explanation of what prevented successful execution and your 
+            attempted approaches.
+
+            All result and rationale outputs must be in Markdown format.
+          `);
 
           const message: AgentMessage = {
             role: 'user',

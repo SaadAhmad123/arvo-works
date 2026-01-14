@@ -1,7 +1,7 @@
 import { createAgentTool } from '@arvo-tools/agentic';
 import { cleanString } from 'arvo-core';
 import z from 'zod';
-import { board, botEmail } from '../../../kanban/config.ts';
+import { board } from '../../../kanban/config.ts';
 
 export const readCard = createAgentTool({
   name: 'tool.read.kandban.card',
@@ -46,7 +46,7 @@ export const readCard = createAgentTool({
       comments: comments.filter((comment) =>
         comment?.created_by_email && comment?.comment
       ).map((comment) => ({
-        role: comment.created_by_email === botEmail
+        role: comment.created_by_email?.includes('@bot.com')
           ? ('agent' as const)
           : ('user' as const),
         content: comment.comment ?? '',
