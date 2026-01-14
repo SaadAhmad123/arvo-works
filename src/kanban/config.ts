@@ -6,9 +6,10 @@ import { CardSeenMemory } from './CardSeenMemory.ts';
 await load({ export: true });
 
 const nocodbApiConfig = createNocodbApiConfig({
-  baseId: 'pox9b2eyg6vn36m',
-  tableId: 'mboooj1tgr2fxq4',
+  baseId: Deno.env.get("BASE_ID") ?? '',
+  tableId: Deno.env.get("TABLE_ID") ?? '',
 });
+export const botEmail = Deno.env.get("BOT_EMAIL") ?? '';
 
 const schema = z.object({
   Title: z.string().nullable().optional(),
@@ -28,4 +29,4 @@ export const board = new KanbanBoard(
   'Task Board Select Field',
 );
 export const cardSeenMemory = new CardSeenMemory();
-export const botEmail = 'saad.ahmad@bot.com';
+

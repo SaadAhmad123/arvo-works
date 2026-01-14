@@ -33,6 +33,7 @@ export const executeHandlers = async (
 };
 
 export const dispatchKanbanEvent = async (cardId: string) => {
+  console.log(`Addressing Card -> Id:${cardId}`)
   await board.update(cardId, {'Task Board Select Field': 'PROGRESSING'})
   const event = createArvoEventFactory(kanbanAgentContract.version('1.0.0'))
     .accepts({
@@ -44,7 +45,6 @@ export const dispatchKanbanEvent = async (cardId: string) => {
     });
   const response = await executeHandlers(event);
   for (const evt of response) {
-    console.log(evt.toString(2))
     if (evt.domain) {
       // TODO: Add domained event handling later. Right now just skip it
       continue
@@ -53,16 +53,19 @@ export const dispatchKanbanEvent = async (cardId: string) => {
       // TODO: If there is some other event other then handle it later. Right now skip it
       continue
     }
+    console.log(`- Finalised Card -> Id:${cardId}`)  
     board.update(cardId, {
       'Task Board Select Field': 'DONE',
       'Rationale': evt.data.rationale ?? '',
       'Result': evt.data.result ?? ''
     })
   }
+  console.log(`Addressed Card -> Id:${cardId}`)
 };
 
 await start(async () => {
   const cards = await fetchAddressableCards();
+  console.log(`Detected ${cards.length} Card for System to address.`)
   for (const card of cards) {
     dispatchKanbanEvent(card.id);
   }
