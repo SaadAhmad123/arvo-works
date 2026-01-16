@@ -3,9 +3,10 @@ import {
   createConcurrentEventBroker,
 } from '@arvo-tools/concurrent';
 import { ArvoEvent } from 'arvo-core';
-import { kanbanAgent } from '../handlers/agent.kanban/index.ts';
-import { calculatorAgent } from '../handlers/calculator.agent.ts';
-import { calculatorHandler } from '../handlers/calculator.service.ts';
+import { kanbanAgent } from '../handlers/agent.kanban.ts';
+import { calculatorAgent } from '../handlers/agent.calculator.ts';
+import { calculatorHandler } from '../handlers/service.calculator.ts';
+import { codeAgent } from '../handlers/agent.code.ts';
 
 const memory = new ConcurrentMachineMemory();
 
@@ -17,6 +18,7 @@ export const executeHandlers = async (
     { handler: kanbanAgent({ memory }) },
     { handler: calculatorAgent({ memory }) },
     { handler: calculatorHandler() },
+    { handler: codeAgent({ memory }) },
   ], {
     defaultHandlerConfig: {
       prefetch: 10,

@@ -6,6 +6,7 @@ import { listComments } from './listComments.ts';
 import { updateRecord } from './updateRecord.ts';
 import { RecordSchema } from './schema.ts';
 import { addComment } from './addComment.ts';
+import { createRecord } from './createRecords.ts';
 
 export class KanbanBoard<
   T extends z.ZodTypeAny = z.ZodTypeAny,
@@ -66,5 +67,19 @@ export class KanbanBoard<
 
   async comment(id: string, comment: string) {
     return await addComment(this.config, { row_id: id, comment });
+  }
+}
+
+export class KanbanArtefact<
+  T extends z.ZodTypeAny = z.ZodTypeAny,
+> {
+  constructor(
+    private readonly config: NocodbApiConfig,
+    private readonly schema: T,
+  ) {
+  }
+
+  async create(data: z.infer<T>) {
+    return await createRecord(this.config, this.schema, data)
   }
 }

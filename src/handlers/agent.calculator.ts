@@ -13,7 +13,7 @@ import {
 import z from 'zod';
 import { cleanString } from 'arvo-core';
 import type { AgentStreamListener } from '@arvo-tools/agentic';
-import { calculatorContract } from './calculator.service.ts';
+import { calculatorContract } from './service.calculator.ts';
 import { humanConversationContract } from './human.conversation.contract.ts';
 
 export const calculatorAgentContract = createArvoOrchestratorContract({

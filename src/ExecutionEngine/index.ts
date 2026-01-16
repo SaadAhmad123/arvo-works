@@ -10,26 +10,40 @@ import { executeKanbanEvent } from './executeKanbanEvent.ts';
 import { onDomainedEvent } from './onDomainedEvent.ts';
 import { botEmails, INTERNAL_EVENT_SOURCE, tracer } from '../config.ts';
 import { onDomainedEventResponse } from './onDomainedEventResponse.ts';
+import { KanbanBoard } from '../nocodb/KanbanBoard.ts';
 
-export const dispatchCard = async (cardId: string, botEmail: string) => {
-  console.log(`Addressing Card -> Id:${cardId}`);
-  const contract = botEmails[botEmail]
+export const dispatchCard = async (
+  card: Awaited<ReturnType<KanbanBoard['get']>>,
+  botEmail: string,
+) => {
+  console.log(`Addressing Card -> Id:${card.id}`);
+  const contract = botEmails[botEmail];
   if (!contract) {
-    const err = `Unable to find contract for bot email -> ${botEmail}`
-    console.error(err)
-    await board.update(cardId, { 'Task Board Select Field': 'DONE', Result: err });  
+    const err = `Unable to find contract for bot email -> ${botEmail}`;
+    console.error(err);
+    await board.update(card.id, {
+      'Task Board Select Field': 'DONE',
+      Result: err,
+    });
   }
-  await board.update(cardId, { 'Task Board Select Field': 'PROGRESSING' });
+  await board.update(card.id, { 'Task Board Select Field': 'PROGRESSING' });
   const event = createArvoEventFactory(contract.version('1.0.0'))
     .accepts({
       source: INTERNAL_EVENT_SOURCE,
       data: {
         parentSubject$$: null,
-        cardId,
+        cardId: card.id,
+        context: JSON.stringify(card.card),
+        comments: card.comments.map((item) => ({
+          role: item.created_by_email?.includes('@bot.com')
+            ? 'assistant'
+            : 'user',
+          message: item.comment ?? '',
+        })),
       },
     });
-  await executeKanbanEvent(cardId, event, onDomainedEvent);
-  console.log(`Addressed Card -> Id:${cardId}`);
+  await executeKanbanEvent(card.id, event, onDomainedEvent);
+  console.log(`Addressed Card -> Id:${card.id}`);
 };
 
 export const dispatchDomainedEventResponseFromCard = async (
