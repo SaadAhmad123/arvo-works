@@ -18,39 +18,43 @@ import { humanConversationContract } from './human.conversation.contract.ts';
 import { addComment } from './commons/agent.tools/addComment.ts';
 import { readArtefact } from './commons/agent.tools/readArtefacts.ts';
 import { createArtefact } from './commons/agent.tools/createArtefact.ts';
+import {
+  artefactContractSchema,
+  artefactPrompt,
+} from './commons/prompts/artefacts.ts';
 
 export const codeAgentContract = createArvoOrchestratorContract({
   uri: '#/kanban/amas/agent/code',
   name: 'code.agent',
   description: cleanString(`
-    Analyzes and refactors code automatically with
-    practical, simple solutions.
+    Analyzes and refactors code with practical solutions. Accepts code inline 
+    or via artefact IDs, processes according to instructions, and returns analysis 
+    summary with refactored code stored in artefacts.
   `),
   versions: {
     '1.0.0': {
       init: z.object({
         cardId: z.string().describe(cleanString(`
-          The unique identifier of the Kanban card being worked upon.
+          The Kanban card identifier for this code task.
         `)),
         instructions: z.string().describe(cleanString(`
-          Instructions specifying what analysis or refactoring to perform on the code.
+          What analysis or refactoring to perform on the code.
         `)),
-        code: z.string().describe(cleanString(`
-          The source code to be analyzed and/or refactored.
+        code: z.string().optional().describe(cleanString(`
+          Source code to analyze or refactor, provided inline.
+        `)),
+        artefacts: artefactContractSchema.optional().describe(cleanString(`
+          Artefact IDs containing source code and additional supporting
+          information/ code/ data so that that agent can provide the 
+          best possible outcome.
         `)),
       }),
       complete: z.object({
-        response: z.string().describe(cleanString(`
-          The analysis findings, refactoring explanation, or general response to the request.
+        summary: z.string().describe(cleanString(`
+          Brief summary of what was analyzed, refactored, or accomplished.
         `)),
-        blocks: z.object({
-          lang: z.string().describe('The programming language of the code'),
-          filename: z.string().optional().describe(
-            'Optional filename for the code block',
-          ),
-          code: z.string().describe('The refactored or example code'),
-        }).optional().array().describe(cleanString(`
-          Code blocks containing refactored code or examples when applicable.
+        artefacts: artefactContractSchema.optional().describe(cleanString(`
+          Artefact IDs containing refactored code or code outputs produced.
         `)),
       }),
     },
@@ -88,32 +92,31 @@ export const codeAgent: EventHandlerFactory<{
         llmResponseType: 'json',
         context: ({ input, tools }) => {
           const system = cleanString(`
-            You are a practical code analysis and refactoring agent that 
-            automatically processes code based on instructions. Your core principle
-            is to provide simple, straightforward solutions without over-engineering or over-analyzing.
-            Work with the provided code and when you need to make assumptions about the code 
-            or its context, first infer what you believe should be assumed, then use 
-            the ${tools.services.humanConversationContract.name} tool to verify your assumptions 
-            with the user before proceeding. 
+            You are a practical code analysis and refactoring agent. Provide simple, 
+            straightforward solutions without over-engineering.
             
-            Use your judgment to determine whether the instructions require code analysis, 
-            refactoring, or both, then proceed autonomously once any necessary assumptions 
-            are clarified. Provide the most practical and efficient solution unless specifically 
-            asked for complex alternatives.
+            ${
+            artefactPrompt(
+              tools.tools.readArtefact.name,
+              tools.tools.createArtefact.name,
+            )
+          }
             
-            Reach out for human clarification in two situations: 
-            - When instructions are genuinely unclear or when you need to verify assumptions 
-              about the code or its context.
-            - When clarification is needed, first infer what you believe should be done or assumed, 
-              then use the Human Conversation tool to confirm your understanding.
+            Read artefacts from the input to access source code when provided. Store 
+            refactored code or substantial code outputs as artefacts and reference the 
+            IDs in your response rather than including code inline. The artefacts must 
+            be properly markdown formatted.
             
-            It is also useful to keep the user informed about your progress and processing in a single
-            comment via ${tools.tools.addComment.name}.
             
-            Tool usage instructions:
-            - Use ${tools.services.humanConversationContract.name} tool when you need to prompt the user for
-              confirmation, input, or assumption verification.
-            - Use ${tools.tools.addComment.name} tool for informational updates that don't require user response
+            When instructions are unclear or you need to make assumptions about the code 
+            or its context, infer what you believe should be done or assumed, then use 
+            ${tools.services.humanConversationContract.name} to verify with the user 
+            before proceeding. Use ${tools.tools.addComment.name} for progress updates 
+            that don't require user response.
+            
+            Determine whether instructions require analysis, refactoring, or both, then 
+            proceed autonomously once assumptions are clarified. Provide the most practical 
+            solution unless specifically asked for alternatives.
           `);
 
           const messages: AgentMessage[] = [
@@ -130,8 +133,23 @@ export const codeAgent: EventHandlerFactory<{
                   Instructions:
                   ${input.data.instructions}
                   
-                  Code:
-                  ${input.data.code}
+                  ${
+                  input.data.code
+                    ? `
+                    Code: 
+                    ${input.data.code}  
+                  `
+                    : ''
+                }
+                  
+                  ${
+                  input.data.artefacts?.length
+                    ? `
+                    Artefacts: 
+                    ${JSON.stringify(input.data.artefacts)}  
+                  `
+                    : ''
+                }
                 `),
               },
               seenCount: 0,

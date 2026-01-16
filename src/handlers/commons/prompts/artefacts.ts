@@ -1,13 +1,12 @@
 import { cleanString } from 'arvo-core';
 import z from 'zod';
 
-export const artefactInputSchema = z.object({
+export const artefactContractSchema = z.object({
   id: z.string().describe('Artefact ID for retrieval'),
-  description: z.string().describe('Brief summary of artefact contents'),
-}).array().describe(cleanString(`
-  Existing artefacts on this card from prior work by agents or humans.
-  Use the read artefact tool with the ID to access contents.
-`));
+  description: z.string().describe(
+    'Brief summary of artefact contents. No more than one sentence',
+  ),
+}).array();
 
 export const artefactPrompt = (
   readToolName: string,

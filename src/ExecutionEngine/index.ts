@@ -33,7 +33,7 @@ export const dispatchCard = async (
       data: {
         parentSubject$$: null,
         cardId: card.id,
-        context: JSON.stringify(card.card),
+        body: JSON.stringify(card.card),
         comments: card.comments.map((item) => ({
           role: item.created_by_email?.includes('@bot.com')
             ? 'assistant'
@@ -41,7 +41,7 @@ export const dispatchCard = async (
           message: item.comment ?? '',
         })),
         artefacts: card.artefacts.map((item) => ({
-          id: item.id,
+          id: item.id.toString(),
           description: item.fields?.Title ?? 'Unknown',
         })),
       },
