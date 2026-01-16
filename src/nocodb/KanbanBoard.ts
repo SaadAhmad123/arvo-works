@@ -7,15 +7,22 @@ import { updateRecord } from './updateRecord.ts';
 import { RecordSchema } from './schema.ts';
 import { addComment } from './addComment.ts';
 import { createRecord } from './createRecords.ts';
+import { linkRecord } from './linkRecord.ts';
+import { listLinkedRecords } from './listLinkedRecords.ts';
 
 export class KanbanBoard<
   T extends z.ZodTypeAny = z.ZodTypeAny,
+  A extends z.ZodTypeAny = z.ZodTypeAny,
   S extends keyof z.infer<T> = keyof z.infer<T>,
 > {
   constructor(
-    private readonly config: NocodbApiConfig,
-    private readonly schema: T,
+    private readonly tableConfig: NocodbApiConfig & {
+      artefactLinkFieldId: string;
+    },
+    private readonly tableSchema: T,
     private readonly kanbanStageField: S,
+    private readonly artefactConfig: NocodbApiConfig,
+    private readonly artefactSchema: A,
   ) {
   }
 
@@ -29,10 +36,10 @@ export class KanbanBoard<
   ) {
     const { pageSize = 100, maxPages = 1000, filter = (() => true) } =
       options ?? {};
-    const recordSchema = RecordSchema(this.schema);
+    const recordSchema = RecordSchema(this.tableSchema);
     let data: z.infer<typeof recordSchema>[] = [];
     for (let page = 1; page <= maxPages; page++) {
-      const resp = await listRecords(this.config, this.schema, {
+      const resp = await listRecords(this.tableConfig, this.tableSchema, {
         page,
         pageSize,
         where: stages.map((stage) =>
@@ -49,15 +56,21 @@ export class KanbanBoard<
   }
 
   async get(id: string) {
-    const [comments, data] = await Promise.all([
-      listComments(this.config, { row_id: id }),
-      getRecord(this.config, this.schema, id),
+    const [comments, data, artefacts] = await Promise.all([
+      listComments(this.tableConfig, { row_id: id }),
+      getRecord(this.tableConfig, this.tableSchema, id),
+      this.listArtefacts(id),
     ]);
-    return { id, card: data.fields, comments: comments.list };
+    return {
+      id,
+      card: data.fields,
+      artefacts: artefacts.records,
+      comments: comments.list,
+    };
   }
 
   async update(id: string, data: Partial<z.infer<T>>) {
-    return await updateRecord(this.config, this.schema, id, data);
+    return await updateRecord(this.tableConfig, this.tableSchema, id, data);
   }
 
   async updateStage(id: string, stage: z.infer<T>[S]) {
@@ -66,20 +79,41 @@ export class KanbanBoard<
   }
 
   async comment(id: string, comment: string) {
-    return await addComment(this.config, { row_id: id, comment });
-  }
-}
-
-export class KanbanArtefact<
-  T extends z.ZodTypeAny = z.ZodTypeAny,
-> {
-  constructor(
-    private readonly config: NocodbApiConfig,
-    private readonly schema: T,
-  ) {
+    return await addComment(this.tableConfig, { row_id: id, comment });
   }
 
-  async create(data: z.infer<T>) {
-    return await createRecord(this.config, this.schema, data)
+  async createArtefact(id: string, data: z.infer<A>) {
+    const resp = await createRecord(
+      this.artefactConfig,
+      this.artefactSchema,
+      data,
+    );
+    const { success } = await linkRecord(
+      {
+        ...this.tableConfig,
+        linkFieldId: this.tableConfig.artefactLinkFieldId,
+      },
+      id,
+      resp?.records?.[0]?.id?.toString() ?? '',
+    );
+    if (!success) {
+      throw new Error(`Unable to link the artefact for card ID:${id}`);
+    }
+    return resp.records[0];
+  }
+
+  async getArtefact(id: string) {
+    return await getRecord(this.artefactConfig, this.artefactSchema, id);
+  }
+
+  async listArtefacts(id: string) {
+    return await listLinkedRecords(
+      {
+        ...this.tableConfig,
+        linkFieldId: this.tableConfig.artefactLinkFieldId,
+      },
+      this.artefactSchema,
+      id,
+    );
   }
 }

@@ -17,6 +17,12 @@ import { readCard } from './commons/agent.tools/readCard.ts';
 import { addComment } from './commons/agent.tools/addComment.ts';
 import { calculatorAgentContract } from './agent.calculator.ts';
 import { codeAgentContract } from './agent.code.ts';
+import { readArtefact } from './commons/agent.tools/readArtefacts.ts';
+import { createArtefact } from './commons/agent.tools/createArtefact.ts';
+import {
+  artefactInputSchema,
+  artefactPrompt,
+} from './commons/prompts/artefacts.ts';
 
 export const kanbanAgentContract = createArvoOrchestratorContract({
   uri: '#/kanban/amas/agent/kanban',
@@ -35,6 +41,7 @@ export const kanbanAgentContract = createArvoOrchestratorContract({
           The task description including title, details, and any relevant 
           information from the card body.
         `)),
+        artefacts: artefactInputSchema,
         comments: z.object({
           role: z.enum(['user', 'assistant']),
           message: z.string(),
@@ -106,13 +113,15 @@ export const kanbanAgent: EventHandlerFactory<{
       new Anthropic.Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') }),
     ),
     tools: {
-      readCard,
+      readCard: readCard(),
       addComment: addComment({ source: kanbanAgentContract.type }),
+      readArtefact: readArtefact(),
+      createArtefact: createArtefact({ source: codeAgentContract.type }),
     },
     handler: {
       '1.0.0': {
         llmResponseType: 'json',
-        context: ({ input }) => {
+        context: ({ input, tools }) => {
           const system = cleanString(`
             You are an autonomous agent responsible for completing tasks assigned 
             through Kanban cards. Your role is to understand what needs to be done, 
@@ -169,6 +178,13 @@ export const kanbanAgent: EventHandlerFactory<{
             something, communicate this honestly and explain why. Trust your intelligence 
             to determine the right approach for each unique situation rather than 
             following a fixed procedure.
+
+            ${
+            artefactPrompt(
+              tools.tools.readArtefact.name,
+              tools.tools.createArtefact.name,
+            )
+          }
           `);
 
           const messages: AgentMessage[] = [

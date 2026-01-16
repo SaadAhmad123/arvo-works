@@ -40,6 +40,10 @@ export const dispatchCard = async (
             : 'user',
           message: item.comment ?? '',
         })),
+        artefacts: card.artefacts.map((item) => ({
+          id: item.id,
+          description: item.fields?.Title ?? 'Unknown',
+        })),
       },
     });
   await executeKanbanEvent(card.id, event, onDomainedEvent);

@@ -3,7 +3,7 @@ import { cleanString } from 'arvo-core';
 import z from 'zod';
 import { board } from '../../../kanban/config.ts';
 
-export const addComment = (params: { source?: string }) =>
+export const addComment = (params: { source: string }) =>
   createAgentTool({
     name: 'tool.add.comment.kandban.card',
     description: cleanString(`

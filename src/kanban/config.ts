@@ -5,12 +5,20 @@ import { KanbanBoard } from '../nocodb/KanbanBoard.ts';
 import { CardSeenMemory } from './CardSeenMemory.ts';
 await load({ export: true });
 
-const nocodbApiConfig = createNocodbApiConfig({
-  baseId: Deno.env.get('BASE_ID') ?? '',
-  tableId: Deno.env.get('TABLE_ID') ?? '',
+const kanbanApiConfig = createNocodbApiConfig({
+  baseId: Deno.env.get('KANBAN_BASE_ID') ?? '',
+  tableId: Deno.env.get('KANBAN_TABLE_ID') ?? '',
 });
 
-const schema = z.object({
+const kanbanArtefactLinkField = Deno.env.get('KANBAN_ARTEFACT_LINK_FIELD_ID') ??
+  '';
+
+const artefactApiConfig = createNocodbApiConfig({
+  baseId: Deno.env.get('ARTEFACT_BASE_ID') ?? '',
+  tableId: Deno.env.get('ARTEFACT_TABLE_ID') ?? '',
+});
+
+const cardSchema = z.object({
   Title: z.string().nullable().optional(),
   'Task Board Select Field': z.enum([
     'TODO',
@@ -27,9 +35,21 @@ const schema = z.object({
   }).array().nullable().optional(),
 });
 
+const artefactSchema = z.object({
+  Title: z.string(),
+  'Additional Details': z.string().optional().nullable(),
+  Content: z.string().optional().nullable(),
+});
+
 export const board = new KanbanBoard(
-  nocodbApiConfig,
-  schema,
+  {
+    ...kanbanApiConfig,
+    artefactLinkFieldId: kanbanArtefactLinkField,
+  },
+  cardSchema,
   'Task Board Select Field',
+  artefactApiConfig,
+  artefactSchema,
 );
+
 export const cardSeenMemory = new CardSeenMemory();

@@ -16,6 +16,8 @@ import {
 } from 'arvo-event-handler';
 import { humanConversationContract } from './human.conversation.contract.ts';
 import { addComment } from './commons/agent.tools/addComment.ts';
+import { readArtefact } from './commons/agent.tools/readArtefacts.ts';
+import { createArtefact } from './commons/agent.tools/createArtefact.ts';
 
 export const codeAgentContract = createArvoOrchestratorContract({
   uri: '#/kanban/amas/agent/code',
@@ -78,6 +80,8 @@ export const codeAgent: EventHandlerFactory<{
     ),
     tools: {
       addComment: addComment({ source: codeAgentContract.type }),
+      readArtefact: readArtefact(),
+      createArtefact: createArtefact({ source: codeAgentContract.type }),
     },
     handler: {
       '1.0.0': {

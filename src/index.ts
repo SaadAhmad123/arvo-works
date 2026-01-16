@@ -7,8 +7,7 @@
 // } from './ExecutionEngine/index.ts';
 // import { domainedEventManager } from './ExecutionEngine/KanbanDomainedEventManager.ts';
 
-import z from 'zod';
-import { KanbanArtefact } from './nocodb/KanbanBoard.ts';
+import { board } from './kanban/config.ts';
 
 // await start(async () => {
 //   const cards = await fetchAddressableCards();
@@ -24,11 +23,22 @@ import { KanbanArtefact } from './nocodb/KanbanBoard.ts';
 //   console.log('Application cleanup...');
 // });
 
-const schema = z.object({
-  Title: z.string().optional().nullable(),
-  Description: z.string().optional().nullable(),
-  Content: z.string().optional().nullable(),
+// const resp = await artefact.create(
+//   '2',
+//   {
+//   Title: 'file-saad',
+//   Description: 'A test file',
+//   Content: 'The content'
+// })
 
-})
+// deno-lint-ignore no-explicit-any
+let resp: any = await board.createArtefact('2', {
+  Title: 'Some Sample Code',
+  Content: 'Some sample content',
+});
 
-const artefact = new KanbanArtefact()
+console.log(resp);
+
+resp = await board.get('2');
+
+console.log(resp);
