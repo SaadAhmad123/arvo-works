@@ -1,6 +1,5 @@
 import { ArvoEvent } from 'arvo-core';
 import { kanbanAgentContract } from '../handlers/agent.kanban.ts';
-import { humanConversationContract } from '../handlers/human.conversation.contract.ts';
 import { executeHandlers } from './executeHandlers.ts';
 import { KanbanBoard } from '../nocodb/KanbanBoard.ts';
 import { getBoard } from '../config.ts';
@@ -55,6 +54,7 @@ ${evt.data.response.summary ?? ''}
 ${evt.data.response.deliverable ?? ''}
         `,
       });
+      await board.comment(card.id, 'Done, have a look :)')
     } else if (evt.data.response.status === 'INPROGRESS') {
       evt?.data?.response?.message &&
         await board.comment(card.id, evt.data.response.message);
@@ -62,6 +62,7 @@ ${evt.data.response.deliverable ?? ''}
         'Task Board Select Field': 'PROGRESSING',
         'Result': evt.data.response.deliverable ?? '',
       });
+      await board.comment(card.id, 'Progressed, awaiting your input');
     } else {
       await board.comment(
         card.id,

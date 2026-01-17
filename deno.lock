@@ -14,6 +14,7 @@
     "npm:@opentelemetry/semantic-conventions@1.38.0": "1.38.0",
     "npm:arvo-core@3.0.28": "3.0.28_@opentelemetry+api@1.9.0_zod@3.25.76",
     "npm:arvo-event-handler@3.0.28": "3.0.28_zod@3.25.76",
+    "npm:hono@^4.11.4": "4.11.4",
     "npm:xstate@5.24.0": "5.24.0",
     "npm:zod-to-json-schema@3.25.0": "3.25.0_zod@3.25.76",
     "npm:zod@3.25.76": "3.25.76"
@@ -753,6 +754,9 @@
         "function-bind"
       ]
     },
+    "hono@4.11.4": {
+      "integrity": "sha512-U7tt8JsyrxSRKspfhtLET79pU8K+tInj5QZXs1jSugO1Vq5dFj3kmZsRldo29mTBfcjDRVRXrEZ6LS63Cog9ZA=="
+    },
     "http-errors@2.0.1": {
       "integrity": "sha512-4FbRdAX+bSdmo4AUFuS0WNiPz8NgFt+r8ThgNWmlrjQjt1Q7ZR9+zTlce2859x4KSXrwIsaeTqDoKQmtP8pLmQ==",
       "dependencies": [
@@ -1170,6 +1174,7 @@
       "npm:@opentelemetry/semantic-conventions@1.38.0",
       "npm:arvo-core@3.0.28",
       "npm:arvo-event-handler@3.0.28",
+      "npm:hono@^4.11.4",
       "npm:xstate@5.24.0",
       "npm:zod-to-json-schema@3.25.0",
       "npm:zod@3.25.76"

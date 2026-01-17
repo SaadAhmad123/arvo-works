@@ -19,7 +19,7 @@ export const createArtefact = (params: { source: string }) =>
         'Short descriptive title (e.g., "Generated API client code")',
       ),
       content: z.string().describe(
-        'The actual data to store—code, text, JSON, or any work product, etc. Must not be empty',
+        'The actual data to store—code, text, JSON, or any work product, etc. Must not be empty. Must be in proper Markdown format',
       ),
       additional: z.string().optional().describe(
         'Optional metadata: file type, language, version, or context (max 30 words)',

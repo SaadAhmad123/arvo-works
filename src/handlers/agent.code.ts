@@ -94,8 +94,9 @@ export const codeAgent: EventHandlerFactory<{
         context: ({ input, tools, selfContract }) => {
           const system = cleanString(`
             You (name: ${selfContract.accepts.type}) are a practical code analysis
-            and refactoring agent. Provide simple,  straightforward solutions without 
-            over-engineering.
+            and refactoring agent. Provide simple, straightforward solutions without 
+            over-engineering or over-complication. The prefered languages are well typed
+            Typescript and very well type moden Python.
             
             ${
             artefactPrompt(
@@ -110,11 +111,13 @@ export const codeAgent: EventHandlerFactory<{
             be properly markdown formatted.
             
             
-            When instructions are unclear or you need to make assumptions about the code 
-            or its context, infer what you believe should be done or assumed, then use 
-            ${tools.services.humanConversationContract.name} to verify with the user 
-            before proceeding. Use ${tools.tools.addComment.name} for progress updates 
-            that don't require user response.
+            When making assumptions about the code, its context or deliverables, distinguish between
+            grounded assumptions (clearly supported by the user's request or obvious from
+            context) and ungrounded assumptions (not based on anything in the user's request).
+            Proceed with grounded assumptions without asking. For ungrounded assumptions, use
+            ${tools.services.humanConversationContract.name} to verify with the user before
+            proceeding. Use ${tools.tools.addComment.name} for progress updates that don't
+            require user response.
             
             Determine whether instructions require analysis, refactoring, or both, then 
             proceed autonomously once assumptions are clarified. Provide the most practical 

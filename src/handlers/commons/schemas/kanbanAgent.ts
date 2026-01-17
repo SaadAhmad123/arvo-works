@@ -48,12 +48,15 @@ export const createKanbanAgentContract = <
               `)),
               summary: z.string().describe(cleanString(`
                 A brief explanation of what was accomplished and why it matters.
+                Must be in Markdown format.
               `)),
               deliverable: z.string().describe(cleanString(`
                 The actual work product or output produced by completing the task.
+                Must be in Markdown format.
               `)),
               rationale: z.string().optional().describe(cleanString(`
                 Explanation of the approach taken and reasoning behind the result.
+                Must be in Markdown format.
               `)),
             }),
             z.object({
@@ -62,10 +65,12 @@ export const createKanbanAgentContract = <
               `)),
               deliverable: z.string().optional().describe(cleanString(`
                 Any interim work product or output produced so far.
+                Must be in Markdown format.
               `)),
               message: z.string().optional().default('Acknowledged').describe(
                 cleanString(`
                   Communication to the user while the task remains incomplete.
+                  Must be in Markdown format.
                 `),
               ),
             }),
