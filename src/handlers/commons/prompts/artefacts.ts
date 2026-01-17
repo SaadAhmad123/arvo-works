@@ -1,12 +1,4 @@
 import { cleanString } from 'arvo-core';
-import z from 'zod';
-
-export const artefactContractSchema = z.object({
-  id: z.string().describe('Artefact ID for retrieval'),
-  description: z.string().describe(
-    'Brief summary of artefact contents. No more than one sentence',
-  ),
-}).array();
 
 export const artefactPrompt = (
   readToolName: string,

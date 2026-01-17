@@ -20,8 +20,10 @@ import { readArtefact } from './commons/agent.tools/readArtefacts.ts';
 import { createArtefact } from './commons/agent.tools/createArtefact.ts';
 import {
   artefactContractSchema,
-  artefactPrompt,
-} from './commons/prompts/artefacts.ts';
+  baseAgentInputSchema,
+} from './commons/schemas/base.ts';
+import { artefactPrompt } from './commons/prompts/artefacts.ts';
+import { readCard } from './commons/agent.tools/readCard.ts';
 
 export const codeAgentContract = createArvoOrchestratorContract({
   uri: '#/kanban/amas/agent/code',
@@ -34,9 +36,7 @@ export const codeAgentContract = createArvoOrchestratorContract({
   versions: {
     '1.0.0': {
       init: z.object({
-        cardId: z.string().describe(cleanString(`
-          The Kanban card identifier for this code task.
-        `)),
+        ...baseAgentInputSchema,
         instructions: z.string().describe(cleanString(`
           What analysis or refactoring to perform on the code.
         `)),
@@ -85,15 +85,17 @@ export const codeAgent: EventHandlerFactory<{
     tools: {
       addComment: addComment({ source: codeAgentContract.type }),
       readArtefact: readArtefact(),
+      readCard: readCard(),
       createArtefact: createArtefact({ source: codeAgentContract.type }),
     },
     handler: {
       '1.0.0': {
         llmResponseType: 'json',
-        context: ({ input, tools }) => {
+        context: ({ input, tools, selfContract }) => {
           const system = cleanString(`
-            You are a practical code analysis and refactoring agent. Provide simple, 
-            straightforward solutions without over-engineering.
+            You (name: ${selfContract.accepts.type}) are a practical code analysis
+            and refactoring agent. Provide simple,  straightforward solutions without 
+            over-engineering.
             
             ${
             artefactPrompt(
@@ -126,28 +128,16 @@ export const codeAgent: EventHandlerFactory<{
                 type: 'text',
                 content: cleanString(`
                   Please Process the following code as per instructions.
-                  
-                  Card Id: 
-                  ${input.data.cardId}
 
-                  Instructions:
-                  ${input.data.instructions}
-                  
-                  ${
-                  input.data.code
-                    ? `
-                    Code: 
-                    ${input.data.code}  
-                  `
-                    : ''
-                }
-                  
+                  Email For Card Interactions: ${input.data.email} 
+
+                  Card:
+                  ID: ${input.data.cardId}
+                  Instructions: ${input.data.instructions}
+                  ${input.data.code ? `Code:\n${input.data.code}  ` : ''}
                   ${
                   input.data.artefacts?.length
-                    ? `
-                    Artefacts: 
-                    ${JSON.stringify(input.data.artefacts)}  
-                  `
+                    ? `Artefacts:\n${JSON.stringify(input.data.artefacts)}`
                     : ''
                 }
                 `),

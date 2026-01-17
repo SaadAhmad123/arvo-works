@@ -1,28 +1,28 @@
 import { createAgentTool } from '@arvo-tools/agentic';
 import { cleanString } from 'arvo-core';
 import z from 'zod';
-import { board } from '../../../kanban/config.ts';
-import { artefactContractSchema } from '../prompts/artefacts.ts';
+import {
+  artefactContractSchema,
+  baseAgentInputSchema,
+} from '../schemas/base.ts';
+import { getBoard } from '../../../config.ts';
 
 export const readCard = () =>
   createAgentTool({
     name: 'tool.read.kandban.card',
     description: cleanString(`
-    Retrieves comprehensive information about a specific 
-    Kanban card including its title, description, and available
-    artefacts. You this to explore more information in the
-    card. Use it only when needed
-  `),
+      Retrieves comprehensive information about a specific 
+      Kanban card including its title, description, and available
+      artefacts. You this to explore more information in the
+      card. Use it only when needed
+    `),
     input: z.object({
-      id: z.string().describe(cleanString(`
-        Unique identifier of the Kanban card to retrieve 
-        from the board
-      `)),
+      ...baseAgentInputSchema,
     }),
     output: z.object({
       title: z.string().describe(cleanString(`
-      The headline or name of the Kanban card
-    `)),
+        The headline or name of the Kanban card
+      `)),
       description: z.string().describe(cleanString(`
         Detailed explanation of the task or request 
         contained in the Kanban card
@@ -31,8 +31,10 @@ export const readCard = () =>
         A list of all available artefacts in the card  
       `)),
     }),
-    fn: async ({ id }) => {
-      const { card, artefacts } = await board.get(id);
+    fn: async ({ cardId, email }) => {
+      const { card, artefacts } = await getBoard({ botEmail: email }).get(
+        cardId,
+      );
       return {
         title: card?.Title ?? '',
         description: card?.Description ?? '',

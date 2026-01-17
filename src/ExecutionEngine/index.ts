@@ -1,5 +1,4 @@
 import { createArvoEventFactory } from 'arvo-core';
-import { board } from '../kanban/config.ts';
 
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import { createOtelContextFromEvent } from './utils.ts';
@@ -7,17 +6,42 @@ import {
   resolveDomainedEventFromCartComments,
 } from './KanbanDomainedEventManager.ts';
 import { executeKanbanEvent } from './executeKanbanEvent.ts';
-import { onDomainedEvent } from './onDomainedEvent.ts';
-import { botEmails, INTERNAL_EVENT_SOURCE, tracer } from '../config.ts';
+import { onDomainedEvent } from './onDomainedEvent/index.ts';
+import {
+  botConfig,
+  getBoard,
+  INTERNAL_EVENT_SOURCE,
+  isBotEmail,
+  tracer,
+} from '../config.ts';
 import { onDomainedEventResponse } from './onDomainedEventResponse.ts';
 import { KanbanBoard } from '../nocodb/KanbanBoard.ts';
+import { createKanbanAgentContract } from '../handlers/commons/schemas/kanbanAgent.ts';
 
+/**
+ * Dispatches a Kanban card for processing by creating and executing an Arvo event.
+ * Updates the card status to 'PROGRESSING' and handles the complete workflow.
+ *
+ * @param card - The Kanban card object retrieved from the board
+ * @param botEmail - The email address of the bot processing the card
+ *
+ * @throws {Error} When unable to find contract for the bot email
+ *
+ * @example
+ * ```typescript
+ * const card = await getBoard(...).get('123');
+ * await dispatchCard(card, 'bot@example.com');
+ * ```
+ */
 export const dispatchCard = async (
   card: Awaited<ReturnType<KanbanBoard['get']>>,
   botEmail: string,
 ) => {
   console.log(`Addressing Card -> Id:${card.id}`);
-  const contract = botEmails[botEmail];
+  const board = getBoard({ botEmail });
+  const contract = botConfig[botEmail].contract() as ReturnType<
+    typeof createKanbanAgentContract
+  >;
   if (!contract) {
     const err = `Unable to find contract for bot email -> ${botEmail}`;
     console.error(err);
@@ -32,6 +56,7 @@ export const dispatchCard = async (
       source: INTERNAL_EVENT_SOURCE,
       data: {
         parentSubject$$: null,
+        email: botEmail,
         cardId: card.id,
         body: JSON.stringify(card.card),
         comments: card.comments.map((item) => ({
@@ -46,21 +71,33 @@ export const dispatchCard = async (
         })),
       },
     });
-  await executeKanbanEvent(card.id, event, onDomainedEvent);
+  await executeKanbanEvent(card, botEmail, event, onDomainedEvent);
   console.log(`Addressed Card -> Id:${card.id}`);
 };
 
+/**
+ * Processes human responses from card comments by resolving domained events and executing them.
+ * Filters out bot comments and processes only human responses that contain event references.
+ *
+ * @param card - The Kanban card object containing comments to process
+ * @param botEmail - The email address of the bot processing the responses
+ *
+ * @throws {Error} When event processing fails during span execution
+ *
+ * @example
+ * ```typescript
+ * const card = await getBoard(...).get('123');
+ * await dispatchDomainedEventResponseFromCard(card, 'bot@example.com');
+ * ```
+ */
 export const dispatchDomainedEventResponseFromCard = async (
-  cardId: string,
+  card: Awaited<ReturnType<KanbanBoard['get']>>,
+  botEmail: string,
 ) => {
-  const card = await board.get(cardId);
-  const emails = Object.keys(botEmails);
   const domainedEvents = await resolveDomainedEventFromCartComments(
-    cardId,
+    card.id,
     JSON.stringify(
-      card.comments.filter((item) =>
-        !emails.includes(item.created_by_email ?? '')
-      ),
+      card.comments.filter((item) => !isBotEmail(item.created_by_email ?? '')),
     ),
   );
 
@@ -68,6 +105,7 @@ export const dispatchDomainedEventResponseFromCard = async (
     `${domainedEvents.length} Human response detected...`,
     domainedEvents.map((item) => item.id),
   );
+
   if (!domainedEvents.length) return;
 
   await Promise.all(
@@ -83,12 +121,15 @@ export const dispatchDomainedEventResponseFromCard = async (
           span.setStatus({ code: SpanStatusCode.OK });
           try {
             const e = await onDomainedEventResponse(
-              { value: id, formatted: `!!${id}` },
-              event,
-              card,
+              {
+                id: { value: id, formatted: `!!${id}` },
+                prevEvent: event,
+                card,
+                botEmail,
+              },
             );
             if (e) {
-              await executeKanbanEvent(cardId, e, onDomainedEvent);
+              await executeKanbanEvent(card, botEmail, e, onDomainedEvent);
             }
           } catch (e) {
             span.setStatus({ code: SpanStatusCode.ERROR });

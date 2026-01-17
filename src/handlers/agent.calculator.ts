@@ -74,9 +74,10 @@ export const calculatorAgent: EventHandlerFactory<
     handler: {
       '1.0.0': {
         llmResponseType: 'json',
-        context: AgentDefaults.CONTEXT_BUILDER(({ tools }) =>
+        context: AgentDefaults.CONTEXT_BUILDER(({ tools, selfContract }) =>
           cleanString(`
-              You are strictly a calculation agent. Your sole purpose is to understand user requests
+              You (name: ${selfContract.accepts.type}) are strictly a calculation agent. Your 
+              sole purpose is to understand user requests
               and use the ${tools.services.calculatorContract.name} to perform calculations
               and respond with results. If the user request is not related to calculation, or you find
               that your tool cannot perform the calculation due to tool limitations,

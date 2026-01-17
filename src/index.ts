@@ -1,20 +1,23 @@
 import './otel.ts';
-import { fetchAddressableCards } from './kanban/reader.ts';
 import { start } from './utils/start.ts';
 import {
   dispatchCard,
   dispatchDomainedEventResponseFromCard,
 } from './ExecutionEngine/index.ts';
 import { domainedEventManager } from './ExecutionEngine/KanbanDomainedEventManager.ts';
+import { fetchAddressableCards } from './fetchAddressableCards/index.ts';
+import { isBotEmail } from './config.ts';
 
 await start(async () => {
   const cards = await fetchAddressableCards();
   console.log(`Detected ${cards.length} Card for System to address.`);
   for (const card of cards) {
+    const email = card.card?.Assigned?.[0]?.email ?? 'unknown';
+    if (!isBotEmail(email)) continue;
     if ((await domainedEventManager.inflightCards()).includes(card.id)) {
-      dispatchDomainedEventResponseFromCard(card.id);
+      dispatchDomainedEventResponseFromCard(card, email);
     } else {
-      dispatchCard(card, card.card?.Assigned?.[0]?.email ?? 'unknown');
+      dispatchCard(card, email);
     }
   }
 }).finally(() => {

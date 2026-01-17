@@ -1,7 +1,8 @@
 import { createAgentTool } from '@arvo-tools/agentic';
 import { cleanString } from 'arvo-core';
 import z from 'zod';
-import { board } from '../../../kanban/config.ts';
+import { baseAgentInputSchema } from '../schemas/base.ts';
+import { getBoard } from '../../../config.ts';
 
 export const createArtefact = (params: { source: string }) =>
   createAgentTool({
@@ -13,7 +14,7 @@ export const createArtefact = (params: { source: string }) =>
       artefact ID for reference.
     `),
     input: z.object({
-      cardId: z.string().describe('The card ID to attach this artefact to'),
+      ...baseAgentInputSchema,
       title: z.string().describe(
         'Short descriptive title (e.g., "Generated API client code")',
       ),
@@ -29,19 +30,21 @@ export const createArtefact = (params: { source: string }) =>
         'Unique ID of the created artefact for future reference',
       ),
     }),
-    fn: async ({ cardId, content, additional, title }) => {
-      const result = await board.createArtefact(cardId, {
-        Title: title,
-        Content: content,
-        'Additional Details': `
+    fn: async ({ cardId, email, content, additional, title }) => {
+      const result = await getBoard({ botEmail: email }).createArtefact(
+        cardId,
+        {
+          Title: title,
+          Content: content,
+          'Additional Details': `
 Created by Agent: ${params.source}
 
 ---
 
 ${additional}
       `,
-      });
-      // On error the error will be thrown
+        },
+      );
       return {
         artefactId: result.id.toString(),
       };

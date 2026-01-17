@@ -1,4 +1,4 @@
-import { cleanString, createArvoOrchestratorContract } from 'arvo-core';
+import { cleanString } from 'arvo-core';
 import {
   type EventHandlerFactory,
   type IMachineMemory,
@@ -10,92 +10,31 @@ import {
   Anthropic,
   anthropicLLMIntegration,
   createArvoAgent,
+  IPermissionManager,
 } from '@arvo-tools/agentic';
-
-import z from 'zod';
 import { addComment } from './commons/agent.tools/addComment.ts';
 import { calculatorAgentContract } from './agent.calculator.ts';
 import { codeAgentContract } from './agent.code.ts';
 import { readArtefact } from './commons/agent.tools/readArtefacts.ts';
 import { createArtefact } from './commons/agent.tools/createArtefact.ts';
-import {
-  artefactContractSchema,
-  artefactPrompt,
-} from './commons/prompts/artefacts.ts';
+import { artefactPrompt } from './commons/prompts/artefacts.ts';
+import { createKanbanAgentContract } from './commons/schemas/kanbanAgent.ts';
 
-export const kanbanAgentContract = createArvoOrchestratorContract({
+export const kanbanAgentContract = createKanbanAgentContract({
   uri: '#/kanban/amas/agent/kanban',
   name: 'agent.kanban',
   description: cleanString(`
     Autonomously executes tasks assigned through Kanban cards by analyzing 
     requirements, performing necessary work, and communicating progress or results.
   `),
-  versions: {
-    '1.0.0': {
-      init: z.object({
-        cardId: z.string().describe(cleanString(`
-          The unique identifier of the Kanban card containing the task to execute.
-        `)),
-        body: z.string().describe(cleanString(`
-          The task description including title, details, and any relevant 
-          information from the card body.
-        `)),
-        artefacts: artefactContractSchema.describe(cleanString(`
-          Existing artefacts on this card from prior work by agents or humans.
-          Use the read artefact tool with the ID to access contents.
-        `)),
-        comments: z.object({
-          role: z.enum(['user', 'assistant']),
-          message: z.string(),
-        }).array().describe(cleanString(`
-          Conversation history between human and AI on this card.
-        `)),
-      }),
-      complete: z.object({
-        cardId: z.string().describe(cleanString(`
-          The identifier of the processed Kanban card.
-        `)),
-        response: z.discriminatedUnion('status', [
-          z.object({
-            status: z.literal('DONE').describe(cleanString(`
-              Indicates the task has been completed successfully.
-            `)),
-            summary: z.string().describe(cleanString(`
-              A brief explanation of what was accomplished and why it matters.
-            `)),
-            deliverable: z.string().describe(cleanString(`
-              The actual work product or output produced by completing the task.
-            `)),
-            rationale: z.string().optional().describe(cleanString(`
-              Explanation of the approach taken and reasoning behind the result.
-            `)),
-          }),
-          z.object({
-            status: z.literal('INPROGRESS').describe(cleanString(`
-              Indicates the task is ongoing and requires further interaction.
-            `)),
-            deliverable: z.string().optional().describe(cleanString(`
-              Any interim work product or output produced so far.
-            `)),
-            message: z.string().optional().default('Acknowledged').describe(
-              cleanString(`
-                Communication to the user while the task remains incomplete.
-              `),
-            ),
-          }),
-        ]).describe(cleanString(`
-          The outcome of task execution indicating completion or ongoing status.
-        `)),
-      }),
-    },
-  },
 });
 
 export const kanbanAgent: EventHandlerFactory<{
   memory: IMachineMemory;
   onStream?: AgentStreamListener;
+  permissionManager?: IPermissionManager;
 }> = (
-  { memory, onStream },
+  { memory, onStream, permissionManager },
 ) =>
   createArvoAgent({
     memory: memory,
@@ -117,16 +56,20 @@ export const kanbanAgent: EventHandlerFactory<{
     tools: {
       addComment: addComment({ source: kanbanAgentContract.type }),
       readArtefact: readArtefact(),
-      createArtefact: createArtefact({ source: codeAgentContract.type }),
+      createArtefact: createArtefact({ source: kanbanAgentContract.type }),
     },
+    permissionManager,
     handler: {
       '1.0.0': {
+        explicitPermissionRequired: (
+          tools,
+        ) => [tools.services.calculatorAgent.name],
         llmResponseType: 'json',
-        context: ({ input, tools }) => {
+        context: ({ input, tools, selfContract }) => {
           const system = cleanString(`
-            You are an autonomous agent responsible for completing tasks assigned 
-            through Kanban cards. Analyze requirements, execute work, and deliver 
-            results with clear communication.
+            You (name: ${selfContract.accepts.type}) are an autonomous agent responsible
+            for completing tasks assigned through Kanban cards. Analyze requirements, execute 
+            work, and deliver results with clear communication.
 
             ${
             artefactPrompt(
@@ -166,7 +109,9 @@ export const kanbanAgent: EventHandlerFactory<{
                 content: cleanString(`
                   You are assign the card. Please address it  
                   
-                  Card: 
+                  Email For Card Interactions: ${input.data.email} 
+
+                  Card:
                   Id: ${input.data.cardId}
                   Body: ${input.data.body},
                   Available Artefacts: ${JSON.stringify(input.data.artefacts)}

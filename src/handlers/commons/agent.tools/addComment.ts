@@ -1,7 +1,8 @@
 import { createAgentTool } from '@arvo-tools/agentic';
 import { cleanString } from 'arvo-core';
 import z from 'zod';
-import { board } from '../../../kanban/config.ts';
+import { baseAgentInputSchema } from '../schemas/base.ts';
+import { getBoard } from '../../../config.ts';
 
 export const addComment = (params: { source: string }) =>
   createAgentTool({
@@ -12,27 +13,25 @@ export const addComment = (params: { source: string }) =>
     ask clarifying questions, or provide updates
   `),
     input: z.object({
-      id: z.string().describe(cleanString(`
-      Unique identifier of the Kanban card where the 
-      comment will be posted
-    `)),
+      ...baseAgentInputSchema,
       comment: z.string().describe(cleanString(`
-      The message content that the agent wants to add 
-      to the card's conversation thread.
-      Critical: Must be in Markdown format
-    `)),
+        The message content that the agent wants to add 
+        to the card's conversation thread.
+        Critical: Must be in Markdown format
+      `)),
     }),
     output: z.object({
       result: z.boolean().describe(cleanString(`
-      Confirmation flag indicating whether the comment 
-      was successfully posted to the Kanban card
-    `)),
+        Confirmation flag indicating whether the comment 
+        was successfully posted to the Kanban card
+      `)),
     }),
-    fn: async ({ id, comment }) => {
-      await board.comment(
-        id,
+    fn: async ({ cardId, email, comment }) => {
+      await getBoard({ botEmail: email }).comment(
+        cardId,
         `
-Comment from '${params.source}'
+Comment from Agent:
+${params.source}
 
 ---
 
