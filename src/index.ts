@@ -9,12 +9,6 @@ import { fetchAddressableCards } from './fetchAddressableCards/index.ts';
 import { isBotEmail } from './config.ts';
 import { Hono } from 'hono';
 
-const app = new Hono();
-
-app.get('/hello', (c) => {
-  return c.json({ message: "Hello World!" });
-});
-
 async function backgroundProcess() {
   const cards = await fetchAddressableCards();
   console.log(`Detected ${cards.length} Card for System to address.`);
@@ -28,6 +22,13 @@ async function backgroundProcess() {
     }
   }
 }
+
+
+const app = new Hono();
+
+app.get('/hello', (c) => {
+  return c.json({ message: "Hello World!" });
+});
 
 const abortController = new AbortController();
 
