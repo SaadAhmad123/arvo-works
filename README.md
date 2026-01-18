@@ -2,6 +2,10 @@
 
 This project explores *what if Kanban boards could serve as collaboration planes between humans and Agentic Mesh?* As multi-agent systems become more common, I've been thinking about better ways for humans and AI to work together naturally to complete and achieve tasks.
 
+# Demo
+
+[![Demo](https://img.youtube.com/vi/jGRvZp1XcgY/maxresdefault.jpg)](https://youtu.be/jGRvZp1XcgY)
+
 
 # Philosophy
 
