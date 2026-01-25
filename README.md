@@ -29,12 +29,46 @@ You interact with agents through familiar Kanban cards and comments, making AI a
 
 Getting started takes a few steps since it relies on setting up NoCoDB tables and the Kanban board. I chose NoCoDB because it gave me a simple API to interact with the board programmatically.
 
-To run the project:
-1. Run `docker compose up` to start the database, NoCoDB, and OpenTelemetry clients
-2. In a separate terminal, start the agent mesh with `deno run start`
-
 If you'd like me to prioritise creating a setup video for the Kanban board, please raise a GitHub issue.
 
+## Migration (First Time Setup)
+
+1. Start the infrastructure services:
+   ```bash
+   docker compose up nocodb db jaeger phoenix nginx
+   ```
+
+2. Go to http://localhost:6001/ and sign up as a super admin
+
+3. Navigate to http://localhost:6001/dashboard/#/account/tokens and generate a token. Since you are super admin, your token will have super admin rights.
+
+4. In the `backend` folder, create a `.env` file and add:
+   ```bash
+   NOCODB_URL=http://localhost:6001
+   NOCODB_TOKEN=<The token you just created>
+   ```
+
+5. In the `backend` folder, run the migration:
+   ```bash
+   deno run migrate
+   ```
+   This will create the tables in NoCoDB and print out the env vars to add, along with instructions for adding tokens for your bot email(s).
+
+## Running the Project
+
+Once migration is complete, run the full stack with:
+
+```bash
+docker compose up
+```
+
+## Application Links
+
+Once the services are running, you can access them through nginx:
+
+- http://localhost:6001/ → NoCoDB (Kanban board interface)
+- http://localhost:6001/jaeger → Jaeger (distributed tracing)
+- http://localhost:6001/arize → Phoenix (observability)
 
 
 # How It Works

@@ -8,13 +8,15 @@ import {
 } from '@opentelemetry/sdk-trace-node';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { SEMRESATTRS_PROJECT_NAME } from '@arizeai/openinference-semantic-conventions';
+import { load } from '@std/dotenv';
+await load({ export: true });
 
 const jaegerExporter = new HTTPExporter({
-  url: 'http://localhost:6001/jaeger/v1/traces',
+  url: Deno.env.get('OTEL_JAEGER_EXPORTER_URL') || 'http://localhost:6001/jaeger/v1/traces',
 });
 
 const phoenixExporter = new ProtoBufExporter({
-  url: 'http://localhost:6001/arize/v1/traces',
+  url: Deno.env.get('OTEL_PHOENIX_EXPORTER_URL') || 'http://localhost:6001/arize/v1/traces',
 });
 
 const sdk = new NodeSDK({

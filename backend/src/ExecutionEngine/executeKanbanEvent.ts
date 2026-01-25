@@ -54,7 +54,7 @@ ${evt.data.response.summary ?? ''}
 ${evt.data.response.deliverable ?? ''}
         `,
       });
-      await board.comment(card.id, 'Done, have a look :)')
+      await board.comment(card.id, 'Done, have a look :)');
     } else if (evt.data.response.status === 'INPROGRESS') {
       evt?.data?.response?.message &&
         await board.comment(card.id, evt.data.response.message);

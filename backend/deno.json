@@ -2,6 +2,7 @@
   "tasks": {
     "start": "deno run -A src/index.ts",
     "dev": "deno run -A --watch src/index.ts",
+    "migrate": "deno run -A migration/index.ts",
     "test": "deno test -A --coverage",
     "services": "docker compose up"
   },

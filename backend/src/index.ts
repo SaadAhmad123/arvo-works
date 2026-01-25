@@ -22,4 +22,4 @@ async function backgroundProcess() {
   }
 }
 
-start(backgroundProcess)
+start(backgroundProcess);

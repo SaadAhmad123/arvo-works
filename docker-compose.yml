@@ -1,9 +1,28 @@
 services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: arvo-backend
+    env_file:
+      - ./backend/.env
+    environment:
+      NOCODB_URL: http://nocodb:8080
+      OTEL_JAEGER_EXPORTER_URL: http://nginx/jaeger/v1/traces
+      OTEL_PHOENIX_EXPORTER_URL: http://nginx/arize/v1/traces
+    restart: unless-stopped
+    networks:
+      - arvoworks-network
+    depends_on:
+      - nocodb
+    develop:
+      watch:
+        - action: rebuild
+          path: ./backend
+
   nocodb:
     image: nocodb/nocodb:latest
     container_name: nocodb
-    ports:
-      - "8080:8080"
     environment:
       NC_DB: "pg://db:5432?u=nocodb&p=password&d=nocodb"
     volumes:
@@ -11,6 +30,8 @@ services:
     depends_on:
       - db
     restart: unless-stopped
+    networks:
+      - arvoworks-network
   
   db:
     image: postgres:18
@@ -22,27 +43,25 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
     restart: unless-stopped
+    networks:
+      - arvoworks-network
 
   jaeger:
-    image: cr.jaegertracing.io/jaegertracing/jaeger:2.10.0
+    image: jaegertracing/all-in-one:latest
     container_name: jaeger
     environment:
       - COLLECTOR_OTLP_ENABLED=true
-      - COLLECTOR_OTLP_HTTP_HOST_PORT=:4318
-      - COLLECTOR_OTLP_GRPC_HOST_PORT=:4317
-    ports:
-      - "4318:4318"    # OTLP HTTP receiver
-      - "16686:16686"  # Jaeger UI
+      - QUERY_BASE_PATH=/jaeger
     networks:
-      - jaeger-network
+      - arvoworks-network
 
   phoenix:
     image: arizephoenix/phoenix:latest
     container_name: phoenix
-    ports:
-      - "6006:6006"    # Phoenix UI & traces
+    environment:
+      - PHOENIX_HOST_ROOT_PATH=/arize
     networks:
-      - jaeger-network  
+      - arvoworks-network  
 
   nginx:
     image: nginx:alpine
@@ -54,8 +73,9 @@ services:
     depends_on:
       - jaeger
       - phoenix
+      - nocodb
     networks:
-      - jaeger-network
+      - arvoworks-network
 
 
 
@@ -64,5 +84,5 @@ volumes:
   postgres_data:
 
 networks:
-  jaeger-network:
+  arvoworks-network:
     driver: bridge
