@@ -1,5 +1,4 @@
-const botToken = (email: string) =>
-  `<The Bot Token - Please login as '${email}', create a token and paste it here>`;
+const botToken = (email: string) => `<Bot Token for '${email}' - See 'How To Obtain Bot Token' below>`;
 
 export const createEnvConfig = (config: {
   kanban: {
@@ -36,4 +35,14 @@ ${
 
 OPENAI_API_KEY=<The OpenAI Key>
 ANTHROPIC_API_KEY=<The Anthropic Key>
+
+
+####### How To Obtain Bot Token #######
+#  1. Go to http://localhost:6001/dashboard/#/account/users/list
+#  2. Find the bot email and click the actions dropdown on the right
+#  3. Copy the invite URL
+#  4. Open the invite URL in incognito mode (to avoid logging out) and sign up as the bot.
+#      Make sure that you use the bot email.
+#  5. Go to http://localhost:6001/dashboard/#/account/tokens
+#  6. Create a new token and paste it here
 `;
