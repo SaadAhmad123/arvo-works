@@ -71,7 +71,7 @@ arvo-backend     | Detected 0 Card for System to address.
 arvo-backend     | Detected 0 Card for System to address.
 ```
 
-Now, you can navigate to the kanban board:
+Now, you can navigate to the kanban board (http://localhost:6001/):
 
 ![Board](./assets/anatomy-of-board.png)
 
