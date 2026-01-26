@@ -24,7 +24,7 @@ const config = {
 
 async function main() {
   const base = await createBase(config, {
-    title: 'Arvo-Works',
+    title: 'Arvo Works',
   });
 
   const [kanban, artefacts] = await Promise.all([

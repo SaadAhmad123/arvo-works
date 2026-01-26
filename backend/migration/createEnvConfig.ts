@@ -15,8 +15,8 @@ export const createEnvConfig = (config: {
     email: string;
   }[];
 }) => `
-NOCODB_URL=http://localhost:8080
-NOCODB_TOKEN=<The super admin token>
+
+#### Copy the following you your '.env'
 
 KANBAN_BASE_ID=${config.kanban.baseId}
 KANBAN_TABLE_ID=${config.kanban.tableId}
@@ -32,9 +32,6 @@ ${
     }`
   ).join('\n\n')
 }
-
-OPENAI_API_KEY=<The OpenAI Key>
-ANTHROPIC_API_KEY=<The Anthropic Key>
 
 
 ####### How To Obtain Bot Token #######
