@@ -42,7 +42,7 @@ If you'd like me to prioritise creating a setup video for the Kanban board, plea
 
 3. Navigate to http://localhost:6001/dashboard/#/account/tokens and generate a token. Since you are super admin, your token will have super admin rights.
 
-4. In the `backend` folder, create a `.env` file and add:
+4. In the `backend` folder, create a `.env` file and copy the content from `.env.sample` to this `.env` file. Make sure to have:
    ```bash
    NOCODB_URL=http://localhost:6001
    NOCODB_TOKEN=<The token you just created>
@@ -56,11 +56,49 @@ If you'd like me to prioritise creating a setup video for the Kanban board, plea
 
 ## Running the Project
 
-Once migration is complete, run the full stack with:
+Once migration is complete, stop the infrastructure services and run the full stack with:
 
 ```bash
+docker compose build
 docker compose up
 ```
+
+You should see logs like this:
+
+```
+arvo-backend     | Press Ctrl+C to exit...
+arvo-backend     | Detected 0 Card for System to address.
+arvo-backend     | Detected 0 Card for System to address.
+```
+
+Now, you can navigate to the kanban board:
+
+![Board](./assets/anatomy-of-board.png)
+
+Let's setup some meaning full defaults:
+
+![Defaults](./assets/selecting-defaults.png)
+
+Start by creating a todo card for the bot
+
+![TODO](./assets/todo-card.png)
+
+The bot will pick it up and start working on it. The card creation does not trigger the bot. Rather, the system periodically looks at the board and picks up the cards in TODO and PROGRESSING. The TODO and PROGRESSING are not the states of the system, rather they are the states of work like in any agile board
+
+![PROGRESSING](./assets/progressing-card.png)
+
+Once, the task is deemed as done. The bot moves
+the card to DONE
+
+![DONE](./assets/done-card.png)
+
+Let's ask it more questions
+
+![MQ](./assets/more-questions.png)
+
+It replied back via commenting. We could have asked it to put it as an artefact as well.
+
+![Comment](./assets/comments.png)
 
 ## Application Links
 
